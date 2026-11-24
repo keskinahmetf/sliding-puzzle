@@ -81,6 +81,11 @@ button:focus-visible{outline:3px solid var(--accent);outline-offset:2px}
 @media (max-width:600px){.refSmall{display:block}}
 .tapHint{display:inline-flex;align-items:center;gap:6px;color:var(--ink);font-weight:500}
 .tapHint svg{flex:none}
+.textBtn{display:inline-flex;align-items:center;gap:6px;font:inherit;font-weight:600;color:var(--accent);background:none;border:0;padding:8px 4px;cursor:pointer;text-decoration:underline;text-underline-offset:4px;text-decoration-thickness:1.5px;touch-action:manipulation}
+.textBtn:hover{color:var(--ink)}
+.lbLink{margin-top:18px;font-size:clamp(1rem,1.6vw,1.2rem)}
+.restart{color:var(--steel);text-decoration:none;padding:4px 0;font-size:inherit}
+.restart:hover{color:var(--ink)}
 .hintRow{width:var(--bw);display:flex;justify-content:center;margin-top:10px;font-size:clamp(.9rem,calc(var(--bw) * .03),1.3rem)}
 .hintRow + .bar{margin-top:10px}
 .playrow{display:grid;grid-template-columns:var(--rw) var(--bw) var(--rw);column-gap:var(--rg);align-items:end;justify-content:center}
@@ -106,7 +111,7 @@ button:focus-visible{outline:3px solid var(--accent);outline-offset:2px}
 .bar{height:8px;border-radius:99px;background:var(--line);overflow:hidden;width:var(--bw);margin-top:12px}
 .bar span{display:block;height:100%;width:100%;background:var(--accent-bg);transform-origin:left}
 .bar.low span{background:var(--danger)}
-.sub{display:flex;justify-content:flex-end;align-items:center;gap:12px;width:var(--bw);color:var(--steel);font-size:clamp(.9rem,calc(var(--bw) * .03),1.3rem);margin-top:6px}
+.sub{display:flex;justify-content:space-between;align-items:center;align-items:center;gap:12px;width:var(--bw);color:var(--steel);font-size:clamp(.9rem,calc(var(--bw) * .03),1.3rem);margin-top:6px}
 
 /* leaderboard screen */
 .result{font-family:var(--display);font-weight:600;font-size:clamp(1.1rem,2.6vw,1.4rem);color:var(--accent);margin:0 0 22px;min-height:1.4em}
@@ -159,6 +164,7 @@ ol.lb li.me{background:linear-gradient(90deg, rgba(19,180,230,.18), transparent)
     </div>
   </div>
   <div class="kbd" id="kbd" aria-label="On-screen keyboard"></div>
+  <button type="button" class="textBtn lbLink" id="viewLb">View leaderboard</button>
 </section>
 
 <section class="screen" id="game" hidden>
@@ -178,7 +184,7 @@ ol.lb li.me{background:linear-gradient(90deg, rgba(19,180,230,.18), transparent)
   </div>
   <div class="hintRow"><span class="tapHint"><svg width="1.2em" height="1.2em" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M9 11V5a2 2 0 0 1 4 0v6"/><path d="M13 10a2 2 0 0 1 4 0v1"/><path d="M17 11a2 2 0 0 1 4 0v3a7 7 0 0 1-7 7h-1.5a6 6 0 0 1-4.6-2.2L4.6 15.6a1.8 1.8 0 0 1 2.7-2.4L9 15"/></svg>Tap a tile next to the gap to slide it</span></div>
   <div class="bar" id="bar"><span id="barFill"></span></div>
-  <div class="sub"><span id="left">5:00 left</span></div>
+  <div class="sub"><button type="button" class="textBtn restart" id="restart"><svg width="1.1em" height="1.1em" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M3 12a9 9 0 1 0 2.64-6.36"/><path d="M3 3v6h6"/></svg>Restart</button><span id="left">5:00 left</span></div>
 </section>
 
 <section class="screen" id="screenBoard" hidden>
@@ -456,9 +462,23 @@ ol.lb li.me{background:linear-gradient(90deg, rgba(19,180,230,.18), transparent)
     setTimeout(() => boardEl.classList.add('glow'), 450);
     const entry = { name: playerName, timeMs: Math.round(elapsed), moves, at: Date.now() };
     saveScore(entry, dup);
-    toBoard = setTimeout(() => { show('screenBoard'); $('again').focus(); }, 3500);
+    toBoard = setTimeout(() => { browsing = false; $('again').textContent = 'Play again'; show('screenBoard'); $('again').focus(); }, 3500);
   }
-  $('again').addEventListener('click', () => backToStart(''));
+  let browsing = false;   // leaderboard opened from the start screen
+  $('again').addEventListener('click', () => {
+    if (browsing) { browsing = false; show('screenName'); if (!touch) nameEl.focus(); }
+    else backToStart('');
+  });
+  $('viewLb').addEventListener('click', () => {
+    browsing = true;
+    $('result').textContent = '';
+    $('again').textContent = 'Back';
+    show('screenBoard'); $('again').focus();
+  });
+  $('restart').addEventListener('click', () => {
+    cancelAnimationFrame(raf); clearTimeout(toBoard);
+    backToStart('');
+  });
 
   // ---------- leaderboard ----------
   const LS_KEY = 'robot-slide-scores';
